@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QComboBox, QPushButton, QVBoxLayout, QWidget, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QComboBox, QPushButton, QVBoxLayout, QWidget, QMessageBox, QHBoxLayout, QGridLayout
 
 class LTEThroughputCalculator:
     def __init__(self, bandwidth, n_cc, mimo, prefix, mcs, table_path = r'C:\Users\pedro\Documents\UFRN\2024.2\Comunicações Móveis\Projetos\HandsOnCM\U2\H04\TBS_data.npz'):
@@ -43,10 +43,11 @@ class LTEThroughputCalculator:
         symbols = 14 if self.prefix == "normal" else 12
         n_sc = 12  # Subcarriers por Resource Block
         const = 2
+        re = CPrefix * n_sc
 
         # Fórmula de throughput em Mbps
         throughput = n_sc * CPrefix * self.num * n_rb * self.n_cc * mimo * 1e-3 * 0.75 * const
-        return throughput
+        return throughput, n_rb, re
     
     def calculateTput_mcs(self):
         import numpy as np
@@ -84,92 +85,148 @@ class LTEThroughputCalculator:
         tbs_matrix = tbs_data['TBS']
         itbs_prb = self.get_resource_blocks()
         throughput_bytable = tbs_matrix[itbs][itbs_prb-1]
+        tbs_value = throughput_bytable
         mimo_value = self.get_mimo()
         fator = 1 if self.prefix == "normal" else 0.857
         throughput_mcs = throughput_bytable * mimo_value * 1e-3 * self.n_cc * fator
 
-        return throughput_mcs, modulation
+        return throughput_mcs, modulation, self.num, tbs_value, itbs
 
 class ThroughputApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Calculadora de Throughput LTE")
+        self.setGeometry(100, 100, 600, 400)
         self.init_ui()
 
     def init_ui(self):
+        # Widget central
+        container = QWidget()
+        self.setCentralWidget(container)
+
         # Layout principal
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
+        container.setLayout(main_layout)
+
+        # ====== Parâmetros de Entrada ======
+        main_layout.addWidget(QLabel("Parâmetros de entrada", self))
+        input_grid = QGridLayout()
 
         # Largura de Banda
-        self.bandwidth_label = QLabel("Largura de Banda (MHz):")
+        input_grid.addWidget(QLabel("BW (MHz):"), 0, 0)
         self.bandwidth_input = QComboBox()
         self.bandwidth_input.addItems(["1.4", "3", "5", "10", "15", "20"])
-        layout.addWidget(self.bandwidth_label)
-        layout.addWidget(self.bandwidth_input)
-
-        # Número de Component Carriers
-        self.n_cc_label = QLabel("Número de Component Carriers:")
-        self.n_cc_input = QComboBox()
-        self.n_cc_input.addItems(["1", "2", "3", "4", "5"])
-        layout.addWidget(self.n_cc_label)
-        layout.addWidget(self.n_cc_input)
-
-        # Configuração MIMO
-        self.mimo_label = QLabel("Configuração MIMO:")
-        self.mimo_input = QComboBox()
-        self.mimo_input.addItems(["Desabilitado", "2x2", "4x4", "8x8"])
-        layout.addWidget(self.mimo_label)
-        layout.addWidget(self.mimo_input)
+        input_grid.addWidget(self.bandwidth_input, 0, 1)
 
         # Prefixo Cíclico
-        self.prefix_label = QLabel("Prefixo Cíclico:")
-        self.prefix_input = QComboBox()
-        self.prefix_input.addItems(["Normal", "Estendido"])
-        layout.addWidget(self.prefix_label)
-        layout.addWidget(self.prefix_input)
+        input_grid.addWidget(QLabel("CP:"), 0, 2)
+        self.cp_input = QComboBox()
+        self.cp_input.addItems(["Normal", "Estendido"])
+        input_grid.addWidget(self.cp_input, 0, 3)
 
         # MCS
-        self.mcs_label = QLabel("MCS (0-28):")
+        input_grid.addWidget(QLabel("MCS:"), 1, 0)
         self.mcs_input = QComboBox()
-        self.mcs_input.addItems(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                                 "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"])
-        layout.addWidget(self.mcs_label)
-        layout.addWidget(self.mcs_input)
+        self.mcs_input.addItems([str(i) for i in range(29)])
+        input_grid.addWidget(self.mcs_input, 1, 1)
+
+        # Configuração MIMO
+        input_grid.addWidget(QLabel("MIMO:"), 1, 2)
+        self.mimo_input = QComboBox()
+        self.mimo_input.addItems(["Desabilitado", "2x2", "4x4", "8x8"])
+        input_grid.addWidget(self.mimo_input, 1, 3)
+
+        # Número de Component Carriers (CA)
+        input_grid.addWidget(QLabel("CA:"), 2, 0)
+        self.ca_input = QComboBox()
+        self.ca_input.addItems(["1", "2", "3", "4", "5"])
+        input_grid.addWidget(self.ca_input, 2, 1)
 
         # Botão Calcular
-        self.calculate_button = QPushButton("Calcular Throughput")
-        self.calculate_button.clicked.connect(self.calculate_throughput)
-        layout.addWidget(self.calculate_button)
+        self.calculate_button = QPushButton("CALCULAR")
+        self.calculate_button.clicked.connect(self.calculate_throughput)  # Conecta ao cálculo
+        input_grid.addWidget(self.calculate_button, 2, 3)
 
-        #Parâmetros de saída
+        main_layout.addLayout(input_grid)
 
-        # Resultado
-        self.result_label = QLabel("")
-        layout.addWidget(self.result_label)
+        # ====== Parâmetros de Saída ======
+        main_layout.addWidget(QLabel("Parâmetros de saída", self))
+        output_grid = QGridLayout()
 
-        # Resultado
-        self.result_label_mcs = QLabel("")
-        layout.addWidget(self.result_label_mcs)
+        # Campos de saída
+        output_grid.addWidget(QLabel("PRB:"), 0, 0)
+        self.prb_output = QLineEdit()
+        self.prb_output.setReadOnly(True)
+        output_grid.addWidget(self.prb_output, 0, 1)
 
-        # Configuração da janela principal
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        output_grid.addWidget(QLabel("TBS INDEX:"), 0, 2)
+        self.tbs_index_output = QLineEdit()
+        self.tbs_index_output.setReadOnly(True)
+        output_grid.addWidget(self.tbs_index_output, 0, 3)
+
+        output_grid.addWidget(QLabel("VALOR TBS:"), 1, 0)
+        self.tbs_value_output = QLineEdit()
+        self.tbs_value_output.setReadOnly(True)
+        output_grid.addWidget(self.tbs_value_output, 1, 1)
+
+        output_grid.addWidget(QLabel("MODULAÇÃO:"), 1, 2)
+        self.modulation_output = QLineEdit()
+        self.modulation_output.setReadOnly(True)
+        output_grid.addWidget(self.modulation_output, 1, 3)
+
+        output_grid.addWidget(QLabel("Nº RE:"), 2, 0)
+        self.nr_output = QLineEdit()
+        self.nr_output.setReadOnly(True)
+        output_grid.addWidget(self.nr_output, 2, 1)
+
+        output_grid.addWidget(QLabel("QTD SÍMBOLOS:"), 2, 2)
+        self.symbols_output = QLineEdit()
+        self.symbols_output.setReadOnly(True)
+        output_grid.addWidget(self.symbols_output, 2, 3)
+
+        main_layout.addLayout(output_grid)
+
+        # Taxa de Transmissão pela equação
+        rate_layout_eq = QHBoxLayout()
+        rate_layout_eq.addWidget(QLabel("Taxa de Transmissão pela equação:"))
+        self.rate_output_eq = QLineEdit()
+        self.rate_output_eq.setReadOnly(True)
+        rate_layout_eq.addWidget(self.rate_output_eq)
+        main_layout.addLayout(rate_layout_eq)
+
+        # Taxa de Transmissão
+        rate_layout = QHBoxLayout()
+        rate_layout.addWidget(QLabel("Taxa de Transmissão:"))
+        self.rate_output = QLineEdit()
+        self.rate_output.setReadOnly(True)
+        rate_layout.addWidget(self.rate_output)
+        main_layout.addLayout(rate_layout)
+
+        # Espaçamento final para alinhamento
+        main_layout.addStretch()
+
 
     def calculate_throughput(self):
         try:
             bandwidth = float(self.bandwidth_input.currentText())
-            n_cc = int(self.n_cc_input.currentText())
+            n_cc = int(self.ca_input.currentText())
             mimo = self.mimo_input.currentText()
-            prefix = self.prefix_input.currentText().lower()
+            prefix = self.cp_input.currentText().lower()
             mcs = int(self.mcs_input.currentText())
 
             calculator = LTEThroughputCalculator(bandwidth, n_cc, mimo, prefix, mcs)
-            throughput_mcs, modulation = calculator.calculateTput_mcs()
-            throughput = calculator.calculate_throughput()
+            throughput_mcs, modulation, num, tbs, tbs_index = calculator.calculateTput_mcs()
+            throughput, prb, re = calculator.calculate_throughput()
 
-            self.result_label.setText(f"Throughput Teórico: {throughput:.2f} Mbps")
-            self.result_label_mcs.setText(f"Throughput TBS: {throughput_mcs:.2f} Mbps | Modulação: {modulation}")
+            self.symbols_output.setText(f"{num}")
+            self.modulation_output.setText(f"{modulation}")
+            self.prb_output.setText(f"{prb}")
+            self.tbs_value_output.setText(f"{tbs}")
+            self.nr_output.setText(f"{re}")
+            self.tbs_index_output.setText(f"{tbs_index}")
+            self.rate_output_eq.setText(f"{throughput:.2f} Mbps")
+            self.rate_output.setText(f"{throughput_mcs:.2f} Mbps")
+            #self.result_label_mcs.setText(f"Throughput TBS: {throughput_mcs:.2f} Mbps | Modulação: {modulation}")
         except ValueError:
             QMessageBox.critical(self, "Erro", "Por favor, insira valores válidos para os campos numéricos.")
         except Exception as e:
