@@ -16,11 +16,6 @@ class LTEThroughputCalculator:
         self.rb_table = {
             1.4: 6, 3: 15, 5: 25, 10: 50, 15: 75, 20: 100
         }  # Resource Blocks por banda
-        self.efficiency_table = {
-            0: 0.1523, 1: 0.2344, 2: 0.3770, 3: 0.6016, 4: 0.8770, 5: 1.1758, 6: 1.4766,
-            7: 1.9141, 8: 2.4063, 9: 2.7305, 10: 3.3223, 11: 3.9023, 12: 4.5234, 13: 5.1152,
-            14: 5.5547, 15: 5.9102
-        }  # Eficiência por MCS
 
     def get_resource_blocks(self):
         """Retorna o número de Resource Blocks para a largura de banda selecionada."""
@@ -37,7 +32,6 @@ class LTEThroughputCalculator:
     def calculate_throughput(self):
         """Calcula o throughput teórico baseado nos parâmetros fornecidos."""
         n_rb = self.get_resource_blocks()
-        #efficiency = self.get_efficiency()
         mimo = self.get_mimo()
         CPrefix = 7 if self.prefix == "normal" else 6
         symbols = 14 if self.prefix == "normal" else 12
