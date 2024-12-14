@@ -182,7 +182,7 @@ class ThroughputApp(QMainWindow):
 
         # Taxa de Transmissão pela equação
         rate_layout_eq = QHBoxLayout()
-        rate_layout_eq.addWidget(QLabel("Taxa de Transmissão pela equação:"))
+        rate_layout_eq.addWidget(QLabel("Throughput pela equação:"))
         self.rate_output_eq = QLineEdit()
         self.rate_output_eq.setReadOnly(True)
         rate_layout_eq.addWidget(self.rate_output_eq)
@@ -190,7 +190,7 @@ class ThroughputApp(QMainWindow):
 
         # Taxa de Transmissão
         rate_layout = QHBoxLayout()
-        rate_layout.addWidget(QLabel("Taxa de Transmissão:"))
+        rate_layout.addWidget(QLabel("Throughput:"))
         self.rate_output = QLineEdit()
         self.rate_output.setReadOnly(True)
         rate_layout.addWidget(self.rate_output)
