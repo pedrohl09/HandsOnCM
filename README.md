@@ -1,2 +1,2 @@
-# HandsOnCM
-Hand's On's de comunicações móveis
+# Hands On Comunicações móveis
+Hand's On's de comunicações móveis com todos os projetos da disciplina.
