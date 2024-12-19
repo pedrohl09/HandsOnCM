@@ -1,4 +1,3 @@
 Link da pasta do drive com os arquivos e o vídeo:
-https://drive.google.com/drive/folders/1lMd8BN7u41zJJOb0eFHDex66BI8iQulD?usp=sharing
 
 *Correção vídeo 2: IDE utilizada - Spyder*
